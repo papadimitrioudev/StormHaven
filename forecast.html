@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>7-Day Forecast - StormHaven by Papadimitrioudev</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.0/echarts.min.js"></script>
+    <style>
+        :root {
+            /* Dark Theme Colors */
+            --glass-bg-dark: rgba(15, 23, 42, 0.3);
+            --glass-border-dark: rgba(255, 255, 255, 0.1);
+            --liquid-platinum: linear-gradient(135deg, #E5E7EB, #F3F4F6, #E5E7EB);
+            --blur-amount: 20px;
+            --border-radius: 16px;
+            --shadow-glass-dark: 0 8px 32px rgba(0, 0, 0, 0.3);
+            
+            /* Dark Theme Palette */
+            --bg-primary: #0F172A;
+            --bg-secondary: #1E293B;
+            --text-primary: #F1F5F9;
+            --text-secondary: #CBD5E1;
+            --accent-blue: #3B82F6;
+            --accent-purple: #8B5CF6;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --error: #F43F5E;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0F172A 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            color: var(--text-primary);
+        }
+
+        .liquid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            background: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0F172A 100%);
+            opacity: 0.8;
+        }
+
+        .liquid-metal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(135deg, #1E293B 0%, #312E81 50%, #1E293B 100%);
+            opacity: 0.3;
+            animation: liquidFlow 20s ease-in-out infinite;
+        }
+
+        @keyframes liquidFlow {
+            0%, 100% { transform: translateX(0) scale(1); }
+            50% { transform: translateX(-10px) scale(1.02); }
+        }
+
+        .glass-card {
+            background: var(--glass-bg-dark);
+            backdrop-filter: blur(var(--blur-amount));
+            border: 1px solid var(--glass-border-dark);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-glass-dark);
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .liquid-button {
+            background: var(--liquid-platinum);
+            border: none;
+            border-radius: var(--border-radius);
+            color: #0F172A;
+            font-weight: 600;
+            padding: 12px 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .liquid-button:active {
+            transform: scale(0.98);
+        }
+
+        .content-wrapper {
+            padding-bottom: 100px;
+            min-height: 100vh;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--glass-bg-dark);
+            backdrop-filter: blur(var(--blur-amount));
+            border-top: 1px solid var(--glass-border-dark);
+            padding: 1rem;
+            z-index: 1000;
+        }
+
+        .nav-items {
+            display: flex;
+            justify-content: space-around;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.5rem;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: var(--text-secondary);
+        }
+
+        .nav-item.active {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--accent-blue);
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-icon {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 0.25rem;
+            background: currentColor;
+            mask-size: contain;
+            mask-repeat: no-repeat;
+            mask-position: center;
+        }
+
+        .nav-icon.dashboard {
+            mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8 5a2 2 0 012-2h4a2 2 0 012 2v6H8V5z'/%3E%3C/svg%3E");
+        }
+
+        .nav-icon.forecast {
+            mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'/%3E%3C/svg%3E");
+        }
+
+        .nav-icon.locations {
+            mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z'/%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M15 11a3 3 0 11-6 0 3 3 0 016 0z'/%3E%3C/svg%3E");
+        }
+
+        .nav-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .forecast-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .forecast-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .forecast-card.expanded {
+            transform: none;
+        }
+
+        .forecast-details {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .forecast-details.expanded {
+            max-height: 300px;
+        }
+
+        .weather-icon-small {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+            border-radius: 50%;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3)) brightness(1.2);
+        }
+
+        .temperature-range {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .temp-high {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .temp-low {
+            color: var(--text-secondary);
+        }
+
+        .precipitation-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            color: var(--accent-blue);
+            font-size: 0.875rem;
+        }
+
+        .chart-container {
+            height: 300px;
+            margin: 1rem 0;
+        }
+
+        .alert-banner {
+            background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+            border: 1px solid #F59E0B;
+            color: #92400E;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .alert-icon {
+            width: 20px;
+            height: 20px;
+            background: currentColor;
+            mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z'/%3E%3C/svg%3E");
+            mask-size: contain;
+            mask-repeat: no-repeat;
+            flex-shrink: 0;
+        }
+
+        .language-switcher {
+            background: var(--glass-bg-dark);
+            backdrop-filter: blur(var(--blur-amount));
+            border: 1px solid var(--glass-border-dark);
+            border-radius: 20px;
+            padding: 6px;
+            display: flex;
+            gap: 4px;
+        }
+
+        .language-option {
+            padding: 6px 12px;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .language-option.active {
+            background: var(--liquid-platinum);
+            color: #0F172A;
+        }
+
+        .language-option:not(.active) {
+            color: var(--text-secondary);
+        }
+
+        .language-option:not(.active):hover {
+            color: var(--text-primary);
+        }
+
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .loading-shimmer {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        /* Dark theme scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--glass-border-dark);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+
+        /* Glow effects for dark theme */
+        .glow-blue {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .glow-purple {
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="liquid-bg"></div>
+    <div class="liquid-metal"></div>
+
+    <div class="content-wrapper">
+        <!-- Header Section -->
+        <header class="p-6 pb-4">
+            <div class="flex items-center justify-between mb-6">
+                <button class="liquid-button" onclick="goBack()">
+                    <span data-i18n="back">← Πίσω</span>
+                </button>
+                <div class="text-center">
+                    <h1 class="text-xl font-semibold" style="color: var(--text-primary);" data-i18n="7dayForecast">7-Ημερη Πρόγνωση</h1>
+                    <p class="text-sm" style="color: var(--text-secondary);" id="locationName">Αθήνα</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <!-- Language Switcher -->
+                    <div class="language-switcher">
+                        <div class="language-option active" data-lang="el">ΕΛ</div>
+                        <div class="language-option" data-lang="en">EN</div>
+                    </div>
+                    <button class="liquid-button" onclick="refreshForecast()">
+                        <span data-i18n="refresh">Ανανέωση</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Weather Alert Banner -->
+        <section class="px-6 mb-6" id="alertSection" style="display: none;">
+            <div class="alert-banner">
+                <div class="alert-icon"></div>
+                <div>
+                    <strong data-i18n="weatherAlert">Ειδοποίηση Καιρού</strong>
+                    <p class="text-sm mt-1" data-i18n="alertMessage">Αναμένεται έντονη βροχή το σαββατοκύριακο. Προγραμμάτισε αναλόγως.</p>
+                </div>
+                <button onclick="dismissAlert()" class="ml-auto text-lg">×</button>
+            </div>
+        </section>
+
+        <!-- Temperature Trend Chart -->
+        <section class="px-6 mb-8">
+            <div class="glass-card p-6 fade-in glow-blue">
+                <h2 class="text-lg font-semibold mb-4" style="color: var(--text-primary);" data-i18n="temperatureTrend">Τάση Θερμοκρασίας</h2>
+                <div class="chart-container" id="temperatureChart"></div>
+            </div>
+        </section>
+
+        <!-- 7-Day Forecast -->
+        <section class="px-6 mb-8">
+            <h2 class="text-lg font-semibold mb-4" style="color: var(--text-primary);" data-i18n="dailyForecast">Ημερήσια Πρόγνωση</h2>
+            <div id="forecastContainer">
+                <!-- Forecast cards will be populated by JavaScript -->
+            </div>
+        </section>
+
+        <!-- Additional Weather Info -->
+        <section class="px-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="glass-card p-6 fade-in glow-purple">
+                    <h3 class="text-lg font-semibold mb-4" style="color: var(--text-primary);" data-i18n="sunMoon">Ηλιο & Σελήνη</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span style="color: var(--text-secondary);" data-i18n="sunrise">Ανατολή Ηλίου</span>
+                            <span class="font-semibold" style="color: var(--text-primary);">6:42 π.μ.</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span style="color: var(--text-secondary);" data-i18n="sunset">Δύση Ηλίου</span>
+                            <span class="font-semibold" style="color: var(--text-primary);">7:28 μ.μ.</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span style="color: var(--text-secondary);" data-i18n="moonPhase">Φάση Σελήνης</span>
+                            <span class="font-semibold" style="color: var(--text-primary);" data-i18n="waxingCrescent">Αύξων Μηνίσκος</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="glass-card p-6 fade-in glow-blue">
+                    <h3 class="text-lg font-semibold mb-4" style="color: var(--text-primary);" data-i18n="precipitation">Βροχόπτωση</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span style="color: var(--text-secondary);" data-i18n="probability">Πιθανότητα</span>
+                            <span class="font-semibold" style="color: var(--text-primary);">25%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span style="color: var(--text-secondary);" data-i18n="amount">Ποσότητα</span>
+                            <span class="font-semibold" style="color: var(--text-primary);">0.2 ίντσες</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span style="color: var(--text-secondary);" data-i18n="type">Τύπος</span>
+                            <span class="font-semibold" style="color: var(--text-primary);" data-i18n="lightRain">Ασθενής Βροχή</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <div class="nav-items">
+            <a href="index.html" class="nav-item">
+                <div class="nav-icon dashboard"></div>
+                <span class="nav-label" data-i18n="dashboard">Κύρια</span>
+            </a>
+            <a href="forecast.html" class="nav-item active">
+                <div class="nav-icon forecast"></div>
+                <span class="nav-label" data-i18n="forecast">Πρόγνωση</span>
+            </a>
+            <a href="locations.html" class="nav-item">
+                <div class="nav-icon locations"></div>
+                <span class="nav-label" data-i18n="locations">Τοποθεσίες</span>
+            </a>
+        </div>
+    </nav>
+
+    <script>
+        class ForecastPage {
+            constructor() {
+                this.forecastData = [];
+                this.chart = null;
+                this.currentLanguage = 'el';
+                this.init();
+            }
+
+            init() {
+                this.loadLanguage();
+                this.setupLanguageSwitcher();
+                this.generateForecastData();
+                this.renderForecast();
+                this.initializeChart();
+                this.setupEventListeners();
+                this.showRandomAlert();
+                this.initializeAnimations();
+            }
+
+            loadLanguage() {
+                const savedLang = localStorage.getItem('stormhaven-language');
+                if (savedLang) {
+                    this.currentLanguage = savedLang;
+                }
+                this.updateLanguage();
+            }
+
+            setupLanguageSwitcher() {
+                const langOptions = document.querySelectorAll('.language-option');
+                langOptions.forEach(option => {
+                    option.addEventListener('click', () => {
+                        const lang = option.dataset.lang;
+                        this.switchLanguage(lang);
+                    });
+                });
+                this.updateLanguageSwitcherUI();
+            }
+
+            switchLanguage(lang) {
+                this.currentLanguage = lang;
+                localStorage.setItem('stormhaven-language', lang);
+                this.updateLanguage();
+                this.updateLanguageSwitcherUI();
+                this.renderForecast(); // Re-render with new language
+                this.initializeChart(); // Update chart labels
+            }
+
+            updateLanguageSwitcherUI() {
+                const langOptions = document.querySelectorAll('.language-option');
+                langOptions.forEach(option => {
+                    if (option.dataset.lang === this.currentLanguage) {
+                        option.classList.add('active');
+                    } else {
+                        option.classList.remove('active');
+                    }
+                });
+            }
+
+            updateLanguage() {
+                const translations = {
+                    el: {
+                        // Navigation
+                        back: "← Πίσω",
+                        refresh: "Ανανέωση",
+                        dashboard: "Κύρια",
+                        forecast: "Πρόγνωση",
+                        locations: "Τοποθεσίες",
+                        
+                        // Headers
+                        "7dayForecast": "7-Ημερη Πρόγνωση",
+                        temperatureTrend: "Τάση Θερμοκρασίας",
+                        dailyForecast: "Ημερήσια Πρόγνωση",
+                        sunMoon: "Ηλιο & Σελήνη",
+                        precipitation: "Βροχόπτωση",
+                        
+                        // Weather Info
+                        sunrise: "Ανατολή Ηλίου",
+                        sunset: "Δύση Ηλίου",
+                        moonPhase: "Φάση Σελήνης",
+                        waxingCrescent: "Αύξων Μηνίσκος",
+                        probability: "Πιθανότητα",
+                        amount: "Ποσότητα",
+                        type: "Τύπος",
+                        lightRain: "Ασθενής Βροχή",
+                        
+                        // Weather Conditions
+                        sunny: "Ηλιόλουστο",
+                        partlyCloudy: "Μερικώς Νεφελώδες",
+                        cloudy: "Νεφελώδες",
+                        rainy: "Βροχερό",
+                        stormy: "Καταιγίδα",
+                        
+                        // Alert
+                        weatherAlert: "Ειδοποίηση Καιρού",
+                        alertMessage: "Αναμένεται έντονη βροχή το σαββατοκύριακο. Προγραμμάτισε αναλόγως.",
+                        
+                        // Details
+                        condition: "Κατάσταση",
+                        humidity: "Υγρασία",
+                        wind: "Ανεμος",
+                        uvIndex: "Δείκτης UV"
+                    },
+                    en: {
+                        // Navigation
+                        back: "← Back",
+                        refresh: "Refresh",
+                        dashboard: "Dashboard",
+                        forecast: "Forecast",
+                        locations: "Locations",
+                        
+                        // Headers
+                        "7dayForecast": "7-Day Forecast",
+                        temperatureTrend: "Temperature Trend",
+                        dailyForecast: "Daily Forecast",
+                        sunMoon: "Sun & Moon",
+                        precipitation: "Precipitation",
+                        
+                        // Weather Info
+                        sunrise: "Sunrise",
+                        sunset: "Sunset",
+                        moonPhase: "Moon Phase",
+                        waxingCrescent: "Waxing Crescent",
+                        probability: "Probability",
+                        amount: "Amount",
+                        type: "Type",
+                        lightRain: "Light Rain",
+                        
+                        // Weather Conditions
+                        sunny: "Sunny",
+                        partlyCloudy: "Partly Cloudy",
+                        cloudy: "Cloudy",
+                        rainy: "Rainy",
+                        stormy: "Stormy",
+                        
+                        // Alert
+                        weatherAlert: "Weather Alert",
+                        alertMessage: "Heavy rain expected this weekend. Plan accordingly.",
+                        
+                        // Details
+                        condition: "Condition",
+                        humidity: "Humidity",
+                        wind: "Wind",
+                        uvIndex: "UV Index"
+                    }
+                };
+
+                // Update all elements with data-i18n attribute
+                const elements = document.querySelectorAll('[data-i18n]');
+                elements.forEach(element => {
+                    const key = element.getAttribute('data-i18n');
+                    if (translations[this.currentLanguage][key]) {
+                        element.textContent = translations[this.currentLanguage][key];
+                    }
+                });
+
+                // Update day names
+                this.updateDayNames();
+            }
+
+            updateDayNames() {
+                const today = new Date();
+                const dayElements = document.querySelectorAll('.forecast-day');
+                
+                dayElements.forEach((element, index) => {
+                    const date = new Date(today);
+                    date.setDate(today.getDate() + index);
+                    
+                    const dayName = date.toLocaleDateString(
+                        this.currentLanguage === 'el' ? 'el-GR' : 'en-US', 
+                        { weekday: 'long' }
+                    );
+                    
+                    // Capitalize first letter
+                    element.textContent = dayName.charAt(0).toUpperCase() + dayName.slice(1);
+                });
+            }
+
+            generateForecastData() {
+                const today = new Date();
+                const conditions = ["sunny", "partlyCloudy", "cloudy", "rainy", "stormy"];
+                
+                this.forecastData = Array.from({ length: 7 }, (_, i) => {
+                    const date = new Date(today);
+                    date.setDate(today.getDate() + i);
+                    
+                    return {
+                        day: date.toLocaleDateString(this.currentLanguage === 'el' ? 'el-GR' : 'en-US', { weekday: 'long' }),
+                        date: date.toLocaleDateString(this.currentLanguage === 'el' ? 'el-GR' : 'en-US', { month: 'short', day: 'numeric' }),
+                        high: Math.floor(Math.random() * 10) + 20,
+                        low: Math.floor(Math.random() * 10) + 10,
+                        condition: conditions[Math.floor(Math.random() * conditions.length)],
+                        precipitation: Math.floor(Math.random() * 100),
+                        humidity: Math.floor(Math.random() * 40) + 40,
+                        windSpeed: Math.floor(Math.random() * 15) + 5,
+                        uvIndex: Math.floor(Math.random() * 10) + 1
+                    };
+                });
+            }
+
+            renderForecast() {
+                const container = document.getElementById('forecastContainer');
+                if (!container) return;
+
+                const translations = {
+                    el: {
+                        condition: "Κατάσταση",
+                        humidity: "Υγρασία",
+                        wind: "Ανεμος",
+                        uvIndex: "Δείκτης UV",
+                        sunny: "Ηλιόλουστο",
+                        partlyCloudy: "Μερικώς Νεφελώδες",
+                        cloudy: "Νεφελώδες",
+                        rainy: "Βροχερό",
+                        stormy: "Καταιγίδα"
+                    },
+                    en: {
+                        condition: "Condition",
+                        humidity: "Humidity",
+                        wind: "Wind",
+                        uvIndex: "UV Index",
+                        sunny: "Sunny",
+                        partlyCloudy: "Partly Cloudy",
+                        cloudy: "Cloudy",
+                        rainy: "Rainy",
+                        stormy: "Stormy"
+                    }
+                };
+
+                container.innerHTML = this.forecastData.map((day, index) => {
+                    const conditionText = translations[this.currentLanguage][day.condition] || day.condition;
+                    
+                    return `
+                    <div class="glass-card forecast-card p-4 mb-4 fade-in" style="animation-delay: ${index * 0.1}s" onclick="toggleForecast(${index})">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-4">
+                                <div class="weather-icon-small"></div>
+                                <div>
+                                    <h3 class="font-semibold forecast-day" style="color: var(--text-primary);">${day.day}</h3>
+                                    <p class="text-sm" style="color: var(--text-secondary);">${day.date}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="text-right">
+                                <div class="temperature-range">
+                                    <span class="temp-high">${day.high}°</span>
+                                    <span class="temp-low">${day.low}°</span>
+                                </div>
+                                ${day.precipitation > 30 ? `
+                                    <div class="precipitation-indicator">
+                                        <span>💧</span>
+                                        <span>${day.precipitation}%</span>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                        
+                        <div class="forecast-details" id="details-${index}">
+                            <div class="border-t border-gray-700 mt-4 pt-4">
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                    <div>
+                                        <span style="color: var(--text-secondary);">${translations[this.currentLanguage].condition}</span>
+                                        <div class="font-semibold" style="color: var(--text-primary);">${conditionText}</div>
+                                    </div>
+                                    <div>
+                                        <span style="color: var(--text-secondary);">${translations[this.currentLanguage].humidity}</span>
+                                        <div class="font-semibold" style="color: var(--text-primary);">${day.humidity}%</div>
+                                    </div>
+                                    <div>
+                                        <span style="color: var(--text-secondary);">${translations[this.currentLanguage].wind}</span>
+                                        <div class="font-semibold" style="color: var(--text-primary);">${day.windSpeed} km/h</div>
+                                    </div>
+                                    <div>
+                                        <span style="color: var(--text-secondary);">${translations[this.currentLanguage].uvIndex}</span>
+                                        <div class="font-semibold" style="color: var(--text-primary);">${day.uvIndex}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `}).join('');
+            }
+
+            initializeChart() {
+                const chartContainer = document.getElementById('temperatureChart');
+                if (!chartContainer) return;
+
+                if (this.chart) {
+                    this.chart.dispose();
+                }
+
+                this.chart = echarts.init(chartContainer);
+                
+                const highTemps = this.forecastData.map(day => day.high);
+                const lowTemps = this.forecastData.map(day => day.low);
+                const days = this.forecastData.map(day => 
+                    this.currentLanguage === 'el' 
+                        ? day.day.substring(0, 3)
+                        : day.day.substring(0, 3)
+                );
+
+                const translations = {
+                    el: {
+                        high: 'Μέγιστη',
+                        low: 'Ελάχιστη'
+                    },
+                    en: {
+                        high: 'High',
+                        low: 'Low'
+                    }
+                };
+
+                const option = {
+                    backgroundColor: 'transparent',
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        containLabel: true
+                    },
+                    xAxis: {
+                        type: 'category',
+                        data: days,
+                        axisLine: {
+                            lineStyle: {
+                                color: '#4B5563'
+                            }
+                        },
+                        axisLabel: {
+                            color: '#9CA3AF',
+                            fontSize: 12
+                        }
+                    },
+                    yAxis: {
+                        type: 'value',
+                        axisLine: {
+                            lineStyle: {
+                                color: '#4B5563'
+                            }
+                        },
+                        axisLabel: {
+                            color: '#9CA3AF',
+                            formatter: '{value}°'
+                        },
+                        splitLine: {
+                            lineStyle: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        }
+                    },
+                    series: [
+                        {
+                            name: translations[this.currentLanguage].high,
+                            type: 'line',
+                            data: highTemps,
+                            smooth: true,
+                            lineStyle: {
+                                color: '#3B82F6',
+                                width: 3
+                            },
+                            itemStyle: {
+                                color: '#3B82F6'
+                            },
+                            areaStyle: {
+                                color: {
+                                    type: 'linear',
+                                    x: 0,
+                                    y: 0,
+                                    x2: 0,
+                                    y2: 1,
+                                    colorStops: [{
+                                        offset: 0, color: 'rgba(59, 130, 246, 0.3)'
+                                    }, {
+                                        offset: 1, color: 'rgba(59, 130, 246, 0.05)'
+                                    }]
+                                }
+                            }
+                        },
+                        {
+                            name: translations[this.currentLanguage].low,
+                            type: 'line',
+                            data: lowTemps,
+                            smooth: true,
+                            lineStyle: {
+                                color: '#8B5CF6',
+                                width: 3
+                            },
+                            itemStyle: {
+                                color: '#8B5CF6'
+                            },
+                            areaStyle: {
+                                color: {
+                                    type: 'linear',
+                                    x: 0,
+                                    y: 0,
+                                    x2: 0,
+                                    y2: 1,
+                                    colorStops: [{
+                                        offset: 0, color: 'rgba(139, 92, 246, 0.3)'
+                                    }, {
+                                        offset: 1, color: 'rgba(139, 92, 246, 0.05)'
+                                    }]
+                                }
+                            }
+                        }
+                    ],
+                    tooltip: {
+                        trigger: 'axis',
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        borderColor: 'rgba(255, 255, 255, 0.2)',
+                        textStyle: {
+                            color: '#F1F5F9'
+                        },
+                        formatter: function(params) {
+                            let result = `<strong style="color: #F1F5F9;">${params[0].axisValue}</strong><br/>`;
+                            params.forEach(param => {
+                                result += `<span style="color: ${param.color};">${param.seriesName}: ${param.value}°C</span><br/>`;
+                            });
+                            return result;
+                        }
+                    }
+                };
+
+                this.chart.setOption(option);
+                
+                // Make chart responsive
+                window.addEventListener('resize', () => {
+                    this.chart.resize();
+                });
+            }
+
+            setupEventListeners() {
+                // Navigation items
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const href = item.getAttribute('href');
+                        this.navigateToPage(href);
+                    });
+                });
+            }
+
+            initializeAnimations() {
+                // Staggered fade-in animations
+                anime({
+                    targets: '.fade-in',
+                    opacity: [0, 1],
+                    translateY: [30, 0],
+                    delay: anime.stagger(100),
+                    duration: 800,
+                    easing: 'easeOutQuart'
+                });
+            }
+
+            showRandomAlert() {
+                // Randomly show weather alert (20% chance)
+                if (Math.random() < 0.2) {
+                    const alertSection = document.getElementById('alertSection');
+                    if (alertSection) {
+                        alertSection.style.display = 'block';
+                        
+                        anime({
+                            targets: alertSection,
+                            opacity: [0, 1],
+                            translateY: [-20, 0],
+                            duration: 500,
+                            easing: 'easeOutQuart'
+                        });
+                    }
+                }
+            }
+
+            navigateToPage(href) {
+                // Update active navigation state
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                
+                // Find and activate clicked item
+                const clickedItem = document.querySelector(`[href="${href}"]`);
+                if (clickedItem) {
+                    clickedItem.classList.add('active');
+                }
+
+                // Page transition animation
+                anime({
+                    targets: '.content-wrapper',
+                    opacity: [1, 0],
+                    translateX: [0, 20],
+                    duration: 300,
+                    easing: 'easeOutQuart',
+                    complete: () => {
+                        window.location.href = href;
+                    }
+                });
+            }
+
+            refreshForecast() {
+                // Show loading state
+                document.querySelectorAll('.forecast-card').forEach(card => {
+                    card.classList.add('loading-shimmer');
+                });
+
+                setTimeout(() => {
+                    this.generateForecastData();
+                    this.renderForecast();
+                    this.initializeChart();
+                    
+                    // Remove loading state
+                    document.querySelectorAll('.loading-shimmer').forEach(card => {
+                        card.classList.remove('loading-shimmer');
+                    });
+                    
+                    // Re-initialize animations
+                    this.initializeAnimations();
+
+                    this.showToast(
+                        this.currentLanguage === 'el' 
+                            ? 'Η πρόγνωση ανανεώθηκε!'
+                            : 'Forecast updated!'
+                    );
+                }, 1500);
+            }
+
+            showToast(message) {
+                // Create toast element
+                const toast = document.createElement('div');
+                toast.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg z-50';
+                toast.textContent = message;
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(-50%) translateY(-20px)';
+                
+                document.body.appendChild(toast);
+                
+                // Animate in
+                anime({
+                    targets: toast,
+                    opacity: [0, 1],
+                    translateY: [-20, 0],
+                    duration: 300,
+                    easing: 'easeOutQuart',
+                    complete: () => {
+                        // Animate out after delay
+                        setTimeout(() => {
+                            anime({
+                                targets: toast,
+                                opacity: [1, 0],
+                                translateY: [0, -20],
+                                duration: 300,
+                                easing: 'easeOutQuart',
+                                complete: () => {
+                                    document.body.removeChild(toast);
+                                }
+                            });
+                        }, 3000);
+                    }
+                });
+            }
+        }
+
+        // Global functions
+        function toggleForecast(index) {
+            const details = document.getElementById(`details-${index}`);
+            const card = details.closest('.forecast-card');
+            
+            if (details.classList.contains('expanded')) {
+                details.classList.remove('expanded');
+                card.classList.remove('expanded');
+            } else {
+                // Close all other expanded cards
+                document.querySelectorAll('.forecast-details.expanded').forEach(detail => {
+                    detail.classList.remove('expanded');
+                    detail.closest('.forecast-card').classList.remove('expanded');
+                });
+                
+                details.classList.add('expanded');
+                card.classList.add('expanded');
+            }
+        }
+
+        function dismissAlert() {
+            const alertSection = document.getElementById('alertSection');
+            anime({
+                targets: alertSection,
+                opacity: [1, 0],
+                translateY: [0, -20],
+                duration: 300,
+                easing: 'easeOutQuart',
+                complete: () => {
+                    alertSection.style.display = 'none';
+                }
+            });
+        }
+
+        function goBack() {
+            window.location.href = 'index.html';
+        }
+
+        function refreshForecast() {
+            window.forecastPage.refreshForecast();
+        }
+
+        // Initialize forecast page
+        document.addEventListener('DOMContentLoaded', () => {
+            window.forecastPage = new ForecastPage();
+        });
+    </script>
+</body>
+</html>
